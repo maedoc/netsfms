@@ -1,0 +1,802 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 12.04.0 ] */
+
+/* [wxMaxima: title   start ]
+network representations 
+of structured flows on manifolds.
+   [wxMaxima: title   end   ] */
+
+/* [wxMaxima: input   start ] */
+imports: [implicit_plot, distrib, newton1]$
+map(load, imports)$
+ratprint: false $
+forget_assumptions():=map(forget, assumptions)$
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: section start ]
+Phase representation of the FitzHugh Nagumo 
+oscillator 
+   [wxMaxima: section end   ] */
+
+/* [wxMaxima: subsect start ]
+reduction and analysis
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: comment start ]
+describe fhn/excitator equations
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+dx : x(t)-x(t)^3/3+y(t);
+dy : I-x(t);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+convert to radius, average phase, solve for steady state r
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+diff( sqrt(x(t)^2 + y(t)^2), t ) $ 
+ev(%, [diff(x(t),t)= dx, diff(y(t), t)= dy]) $
+ev(%, [x(t)=r*cos(p), y(t)=r*sin(p)]) , radcan, trigreduce $ 
+integrate(%, p, 0, 2*%pi), factor;
+solve([%=0], r);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+obtain phase equation, keeping lowest term
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+diff( atan( y(t)/x(t) ), t);
+ev(%, [diff(x(t),t)= dx, diff(y(t), t)= dy]);
+ev(%, [x(t)=r*cos(p), y(t)=r*sin(p), r=2]), radcan, trigsimp, factor, trigreduce;
+dp:ev(%, [sin(4*p)=0, sin(2*p)=0]), factor;
+wxplot2d(ev(%, [I=2]), [p, -%pi, %pi]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+fixed point existence and stability, first and third quandrants
+are stable, where p and I have same sign. acos(2/I) gives correct
+f.p. for I>0, not for I<0. 
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+dp_ss: rhs(solve([dp=0], p)[1]);
+plot2d(dp_ss, [I, -4, 4]);
+dp_l: diff(dp, p);
+dp_l2: dp_l, p=dp_ss;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+obtain oscillation period by integrating dt/dphase from 
+-pi to pi. 
+answer that (I-2)(I+2) is positive (which corresponds to 
+the oscillatory regime I<2
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+dp;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+answer negative here:
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+assume(4-I^2>0);
+T0: integrate(1/dp, p, %pi, -%pi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+simplify answer, change to rate
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+R1: 1/T0;
+wxplot2d(if I^2<4 then R1 else 0, [I, -4, 4]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: subsect start ]
+simulation
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: input   start ] */
+dp;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dp1: I*sin(p)/2 - 1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+set_random_state( make_random_state(42) )$
+dp_vf (p, I) := block(
+  mode_declare(p, float, I, float),
+  ev(-dp1))$
+translate(dp_vf)$
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sol: []$ pi: -0.5$ dt: 0.05$ PI:ev(%pi, numer)$
+jump_count: 0$
+
+for i: 1 thru 100/dt do block(
+  pi: pi + dt*(1 + 1.9*sin(pi)/2),
+  if pi > %pi then block(pi: pi-2*PI, jump_count: jump_count + 1),
+  if mod(i,5)=0 then sol: append(sol, [[dt*i, pi]])
+)$
+wxplot2d([discrete, sol]);
+display(jump_count)$
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: subsect start ]
+prc
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: comment start ]
+!!!!!!!!!!!!!!!!!!!!!!1 attention: Maxima will switch the integration limits when it wants to, so
+that's why there are negative signs inserted by hand in order to make the results correct!!!!!!!!!!!
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+dp: (omega + g*delta)*cos(theta)/2 - 1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+assume(omega^2<1);
+dpa: 1 + sin(theta)*(omega + delta*g);
+T0a: integrate(ev(1/dpa, delta=0), theta, -%pi, %pi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+to both questions answer negative
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+assume(omega^2-4<0);
+T0: integrate(ev(1/dp, [delta=0]), theta, %pi, -%pi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ts: T0*(-phi + %pi)/(2*%pi);
+tsa: T0a*(phi + %pi)/(2*%pi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+answer negative to this one, phi is always between -pi and pi
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+assume(phi<%pi) $
+ts1: -integrate(ev(1/dp, [delta=0]), theta, phi, %pi), radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ts1: integrate(ev(1/dp, [delta=0]), theta, %pi, phi), radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ts1a: integrate(ev(1/dpa, [delta=0]), theta, -%pi, phi), radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+need to ensure that in this plot, it starts at a reasonable positive number and goes down to zero
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+ts1, omega=1.;
+wxplot2d([%, ev(ts1a, omega=0.5)], [phi, -%pi, %pi]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+g cos(phi) + 2*phi + 2*pi is positive when g < 0; starts to be neg from -pi and root moves toward pi as g increases away from 0.
+g cos(phi) + 2*phi - 2*pi is negative when g > 0; starts to be pos from pi and root moves toward -pi as g decreases away from 0.
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+trpp: -integrate(ev(1/dp, [delta=0]), theta, %pi, phi+g*cos(phi)/2), radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+neg pos, pos neg and neg neg all give the same answer, so just use nn¦
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+trnn: -integrate(ev(1/dp, [delta=0]), theta, %pi, phi+g*cos(phi)/2), radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+trnn: integrate(ev(1/dp, [delta=0]), theta, phi+g*cos(phi)/2, -%pi), radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+trnna: integrate(ev(1/dpa, [delta=0]), theta, phi + g*sin(phi), %pi), radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+trnn, omega=1.0 $
+wxplot2d([ev(%, g=0.5), ev(%, g=-0.5)], [phi, -%pi, %pi]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+trnna, omega=0.5 $
+wxplot2d([ev(%, g=0.5), ev(%, g=-0.5)], [phi, -%pi, %pi]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+T1nn: ts1 + trnn, radcan;
+T1pp: ts1 + trpp, radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+[T0, T1pp, T1nn], g=-0.0, omega=1., numer, phi=0.0;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(ts1 + trnn)/T0 - 1, radcan $
+prc: %;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+omega:'omega;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ts1a + trnna, radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+T0a;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(ts1a + trnna)/T0a - 1, radcan $
+prca: %;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+wxplot2d(ev(prc, omega=1.0, g=-0.5), [phi, -%pi, %pi]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+wxplot2d(ev([prca, diff(prca, phi)], omega=0.5, g=0.5), [phi, -%pi, %pi]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+bd : ev(1.0*%pi, numer);
+C1: ev(ts1a, omega=1/2-dw, phi=phi1) = ev(trnna, omega=1/2+dw, phi=phi2) $
+C2: ev(ts1a, omega=1/2+dw, phi=phi2) = ev(trnna, omega=1/2-dw, phi=phi1) $
+lambda : (diff(ev(prca,phi=phi1,omega=1/2-dw), phi1) - 1)*(diff(ev(prca,phi=phi2,omega=1/2+dw), phi2) - 1) $
+pars : [g=0.5, dw=0.] $
+implicit_plot(ev([C1, C2], pars), [phi1, -bd, bd], [phi2, -bd, bd]);
+plot3d(ev(lambda, pars), [phi1, -bd, bd], [phi2, -bd, bd]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+T0a;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(rhs(C1)-lhs(C1))/T0a, radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+wxplot2d(ev([(rhs(C1)-lhs(C1))/T0a, (rhs(C2)-lhs(C2))/T0a, lambda-1], 
+    omega=1/2, phi1=phi, phi2=phi, g=0.3, dw=0.), [phi, -3.16, 3.16]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+omega: 0.6 $ dw: 0.000$
+o1: omega+dw $
+o2: omega-dw $
+Tt: ev(T0a, omega=o1)/ev(T0a, omega=o2), numer $
+R0s: [1000/ev(T0a, omega=o1), 1000/ev(T0a, omega=o2)], numer;
+Ttinv: 1/Tt $
+f1: ev(prca, omega=o1) $
+f2: ev(prca, omega=o2) $
+dphi: Ttinv*(1 + ev(f2, phi=Tt*(1 - ts1a/T0a + f1))) - (1 + f1) $
+wxplot2d([(R0s[1]/10)*ev(dphi, g=0.1), ev(dphi, g=0.1)], [phi, -%pi, %pi], ['y, -%pi, %pi]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dprca: diff(prca, phi) $
+wxplot2d([ev(dprca, omega=1/2, g=0.2)-1, 
+          ev(dprca, omega=1/2, g=-0.2)-1], [phi, -%pi, %pi],
+    [legend, "g>0", "g<0"]);
+wxplot2d(ev(dprca, omega=1/2, phi=%pi-0.001)-1, [g, -1, 1]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Z(phis, N) := abs(sum(exp(%i*phis[k]), k, 1, N)/N) $
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+n: 2;
+prc, g=n*g*Z(phi, n), phi=sum(phi[k],k,1,n)/n $
+diff(%, phi[2]) $
+ev(%, makelist(phi[i]=%pi, i, 1, n));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+single eigenvalue for mode formation, evaluted at synchronization fixed point
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+Z(phis, N) := abs(sum(exp(%i*phis[k]), k, 1, N)/N) $
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+n: 6;
+prc, g=n*g*Z(phi, n), phi=sum(phi[k],k,1,n)/n $ diff(%, phi[2]) $
+fp: ev(%, makelist(phi[i]=%pi, i, 1, n));
+plot3d(min(abs(fp),1) , [g, -%pi/2, %pi/2], [omega, 0, 2]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+exp(%i*pi), numer;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+2nd order approx around 0 point is good enough for local work
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+ratprint:false;
+gmaster: %pi/2;
+fix: ev(prc, [omega=1+mo, g=gmaster, phi=%pi+mp]) - ev(prc, [omega=1-mo, g=gmaster, phi=%pi-mp]) $
+t1: taylor(fix, [mo, mp], 0, 1) $
+t3: taylor(fix, [mo, mp], 0, 3) ;
+f: diff(prc, phi) $ 
+f1: ev(f, [omega=1 + mo, phi=%pi+mp, g=gmaster]) $ 
+f2: ev(f, [omega=1 - mo, phi=%pi-mp, g=gmaster]) $ 
+lambda : (f1-1)*(f2-1) $
+lam1: taylor(lambda, [mo, mp], 0, 2), radcan $ ev(%, numer);
+solve([diff(lam1, mp)=0, diff(lam1, mo)=0], [mp, mo]) ; ev(lam1, %, numer);
+
+wximplicit_plot([fix=0, t3=0, abs(lam1)=1.0, abs(lambda)=1.0], 
+[mo, -0.5, 0.5], [mp, -1.0, 1.0], [legend,""]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+t3 $ ev(%, numer, expand)/0.0852811381638135 $ ev(%, expand, numer);
+lam1 $ ev(%, numer, expand)/-0.27217101584925 $ ev(%, expand, numer);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+solve([t1=0], mp), expand;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+now if I build a matrix for synchronization of n neurons:
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+N: 4;
+F: apply(matrix, makelist(makelist(f[j], j, 1, N), i, 1, N))$
+Is: apply(matrix, makelist(makelist(if (j=mod(i,N)+1) then 1 else 0, j, 1, N), i, 1, N)) $
+F-Is;
+eigenvalues(F-Is) $
+makelist(float(ev(abs(float(%[1][i])),numer)), i, 1, N) $
+%[1];
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+prca, omega=1/2, 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: section start ]
+Two theta neurons coupled
+   [wxMaxima: section end   ] */
+
+/* [wxMaxima: subsect start ]
+rate dynamics
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: comment start ]
+We know the rate of a theta neuron, but inorder to endow 'rate' with 
+indendent dynamics, we want a simple dynamics that follows this.
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: comment start ]
+first, try to average over input to match the steady state of a 
+nonlinear synapse 
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+R2: (I^2-4)^alpha/(4*%pi);
+assume(alpha>0) $
+R2_Iavg: integrate( ev(R2, [(I^2-4) = abs(I^2-4)]), I, 0, 2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+R3: rhs(solve([0 = (b - r3)*H - r3/a], r3)[1]);
+assume(a>0) $
+R3_Havg: integrate(R3, H, 0, 4^alpha);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+this doesn't go very far, so let's assume synaptic dynamics
+are linear, follow adiabatically
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+ev(solve([0 = H - 'r], 'r), [H=R2]) $
+ev(%, [alpha=1]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+so now, the in coupled case (need to look at notes again)
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+ev(R2 - r[i], [alpha=1, I=(sum(g[i,j]*r[j], j, 1, N))]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+As my notes confirm, I assumed the use of linear dynamics. Bon: 
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+R1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+rdot: ;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+If the two neurons or modes are mutually and symmetrically but not self coupled, 
+there is a symmetry w.r.t. to change of variables in their steady states
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+assumptions : [r2>0, r2^2-4>0] $
+map(assume, assumptions) $
+
+ev('diff(r, t)*4*%pi = sqrt(abs(I^2-4)) - 'r, [r=r1, I=r2]);
+%, 'diff(r1, t)=0 $ solve(%, r1);
+%, r1=r2, r2=r1;
+solve(%[1], r1);
+
+map(forget, assumptions) $
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+Here we address the possible manifold in a two dimensional system, but this is not
+a particularly general result? 
+
+- Now address the flows, and generalize to N-neuron modes? 
+- Also have to address excitator dynamics in two neuron/mode networks. 
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: subsect start ]
+Phase dynamics
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: comment start ]
+What we can consider here is the situation of synchronization of two pulse coupled oscillators 
+at two different (but temporally stable) frequencies. We should see (and show) more or less
+HKB style dynamics, Arnold tongues. Here's the article to look at: 
+
+deGuzman and Kelso - Multifrequency behavioral patterns and the phase attractive circle map
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: section start ]
+Three neurons
+
+   [wxMaxima: section end   ] */
+
+/* [wxMaxima: input   start ] */
+dw(i, n):=ev(-w[i] + sqrt(1 - (g0*sum(w[j], j, 1, n) + I0)^2), sumexpand);
+dW(i, n):=ev(-w[i] + sqrt(1 - (g0*WMF + I0)^2));
+depends([WMF], [w[1], w[2], w[3], w[4], w[5]]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+w0 : (-g0*N*I0 + sqrt(g0^2*N^2 - I0^2+1))/(g0^2*N^2 + 1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dw(1, 3);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+n: 3 $ makelist(makelist( diff(dW(i, n), w[j]), j, 1, n), i, 1, n)$
+apply(matrix, %) $
+evs: eigenvalues(%) $
+ev(%, [diff(WMF, w[1])=1/n, diff(WMF, w[2])=1/n, diff(WMF, w[3])=1/n, diff(WMF, w[4])=1/n, diff(WMF, w[5])=1/n]);
+lamu : %[1][2];
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+lamu, WMF=w0*N, radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+-(g0^2*N*sqrt(g0^2*N^2-I0^2+1)+g0*I0)/sqrt(-2*g0*I0*N*sqrt(g0^2*N^2-I0^2+1)+(g0^2*I0^2+g0^2)*N^2-I0^2+1), factor;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: subsect start ]
+firing rate
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: comment start ]
+1. project to xi coords
+2. SIG-S exchange
+3. to phi, r, r coords
+
+The important part is to arrive again at three results: 
+
+1. existence & stability of normal (1, 1, 1) dynamics
+2. existence & stability of radial dynamics
+3. existence & stability of heteroclinic cycle phase dynamics. 
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+taylor(sqrt(1 - (gxx*x + gxy*y)^2), x, 0, 2) $
+%, y=0;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+analysis of connectivity matrix creating 3-cycle, assuming we get throw the sqrt
+
+We'd like to project this onto the normal, radial and phase coordinates, so 
+we make a guess using the right singular vectors of the connectivity with g=0 mu=1; 
+with the reverse projection; define derivatives
+
+obtain rate and normal dynamics, phase averaged; evaluate phase dynamics with solution
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+asymm: matrix([ 0, -1,  1], 
+              [ 1,  0, -1], 
+              [-1,  1,  0] ) $
+G: g-g*ident(3)+mu*asymm;
+
+apply(matrix, makelist([r[i]], i, 1, 3))$ Grs: G . % $
+drs: apply(matrix, makelist([(Grs[i][1]^2 - 4) - r[i]], i, 1, 3));
+
+[U, S, VT] : dgesvd(ev(G, [g=0, mu=1]), false, true) $
+minus1(x) := if x>0 then 1 else -1 $
+VT: matrixmap(
+  lambda([mij], if abs(mij)>1e-2 then minus1(mij)*sqrt(2/round(2/(mij^2))) else 0),
+  VT ), radcan ;
+
+matrix([x(t)], [y(t)], [n(t)]) $ transpose(VT) . % $
+rx_reverse_proj: makelist(r[i]=%[i][1],i,1,3) $
+
+dx: ev((VT . drs)[1][1], rx_reverse_proj)$
+dy: ev((VT . drs)[2][1], rx_reverse_proj)$
+dn: ev((VT . drs)[3][1], rx_reverse_proj)$
+
+xyn2prn: matrix([-(sin(p)*r)/(sin(p)^2*r^2+cos(p)^2*r^2),
+               (cos(p)*r)/(sin(p)^2*r^2+cos(p)^2*r^2),0],
+                 [(2*cos(p)*r)/(2*sqrt(sin(p)^2*r^2+cos(p)^2*r^2)),
+                  (2*sin(p)*r)/(2*sqrt(sin(p)^2*r^2+cos(p)^2*r^2)), 0],
+                 [0, 0, 1])$
+VT . drs, rx_reverse_proj, radcan, n(t)=n $ %, x(t)=r*cos(p), y(t)=r*sin(p) $
+DPRN: xyn2prn . %, expand, trigreduce, radcan;
+
+r_avg: integrate(DPRN[2][1], p, -%pi, %pi) $
+n_avg: integrate(DPRN[3][1], p, -%pi, %pi) $
+nr_avg: solve([r_avg=0, n_avg=0], [n, r])[2], factor;
+
+NPI: %pi, numer $
+DPRN[1][1], nr_avg $ pl: diff(%, p), g=-1/2;
+ev(DPRN[1][1], nr_avg), factor $ pd: %, g=-1/2,  radcan;
+wximplicit_plot([%=0, pl=0, pl=-1/3], [p, -NPI, NPI], [mu, -0.3, 0.3], [legend,""]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+pd;
+pl, factor;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+asymm: matrix([ 0, -1,  1], 
+             [ 1,  0, -1], 
+              [-1,  1,  0] ) $
+G: g-g*ident(3)+mu*asymm$
+
+G[1,2]: g - mu*(1-alpha) $ 
+G[2,1]: g + mu*(1-alpha) $ display(G)$
+
+apply(matrix, makelist([r[i]], i, 1, 3))$ Grs: G . % $
+drs: apply(matrix, makelist([(Grs[i][1]^2 - 4) - r[i]], i, 1, 3))$
+
+matrix([x(t)], [y(t)], [n(t)]) $ transpose(VT) . % $
+rx_reverse_proj: makelist(r[i]=%[i][1],i,1,3) $
+
+dx: ev((VT . drs)[1][1], rx_reverse_proj)$
+dy: ev((VT . drs)[2][1], rx_reverse_proj)$
+dn: ev((VT . drs)[3][1], rx_reverse_proj)$
+
+xyn2prn: matrix([-(sin(p)*r)/(sin(p)^2*r^2+cos(p)^2*r^2),
+                 (cos(p)*r)/(sin(p)^2*r^2+cos(p)^2*r^2),0],
+                 [(2*cos(p)*r)/(2*sqrt(sin(p)^2*r^2+cos(p)^2*r^2)),
+                  (2*sin(p)*r)/(2*sqrt(sin(p)^2*r^2+cos(p)^2*r^2)), 0],
+                 [0, 0, 1])$
+VT . drs, rx_reverse_proj, radcan, n(t)=n $ %, x(t)=r*cos(p), y(t)=r*sin(p) $
+DPRN: xyn2prn . %,  radcan$
+
+DPRN[2][1], radcan, sin(p)^2+cos(p)^2=1, expand, factor $
+%, sin(p)^2+cos(p)^2=1, trigsimp, trigreduce$
+r_avg: integrate(%, p, -%pi, %pi) $
+n_avg: integrate(DPRN[3][1], p, -%pi, %pi)  $
+nr_avg: solve([r_avg=0, n_avg=0], [n, r])[2], factor $
+
+NPI: %pi, numer $
+DPRN[1][1], nr_avg $ pl: diff(%, p), g=-1/2 $
+dp : ev(DPRN[1][1], nr_avg), factor $ %, g=-1/2, radcan $
+dp1: dp, g=-1/2, factor, sin(p)^2 + cos(p)^2=1, trigsimp, radcan $
+dp2: dp1, factor, trigsimp, trigreduce, trigrat, ratsimp, radcan ;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+tex(dp2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dp2;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+match( a(b*sin + c*cos)+d, dp2) $
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+isolating teh terms of the sin and cos components
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+dp2, expand $ isolate(%, sin(3*p)) $ %, radcan $
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+isolate(dp2, sin(3*p)) $
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+isolate(%t986, sin(2*p));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+isolate(%t994,  cos(2*p));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+isolate(%t984, cos(3*p));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+isolate(%t989, sin(p));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+isolate(%t991, cos(p));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dp1: dp, mu=1, g=-1/2, alpha=2/3, radcan $
+dp2: dp, mu=1, g=-1/2, alpha=0, radcan $
+dp3: dp, mu=0, g=-1/2, alpha=0, radcan $
+wxplot2d([dp1, dp2, dp3], [p, -%pi, %pi],
+ [legend, "mu=1, alpha=1/3", 
+"mu=1", 
+"mu=0"])$
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+warning: this integration takes 5 minutes
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+dp, g=-1/2, radcan, expand, trigreduce $
+integrate(%, p, -%pi, %pi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+plot3d(%, [mu, -2, 2], [alpha, -5, 3]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+here we can say we've captured it: existence and stability of phase fixed points as asymmetry
+varies. For small asymmetry the fixed points remain, while larger asymmetry produces cycling.
+We also show the effect of greater symmetry breaking: going between multistability and limit
+cycle to obtain monostability. 
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: section start ]
+Four and more : ensemble couplings
+   [wxMaxima: section end   ] */
+
+/* [wxMaxima: comment start ]
+We maybe should not dwell too much here except to demosntrate some stability 
+properties of ensembles. 
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: subsect start ]
+mode formation
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: input   start ] */
+dq(i,n):= ev(-q[i] + sqrt(4 - (g*sum(q[j], j, 1, n) + I)^2), sumexpand);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+n: 3;
+makelist( makelist(diff(dq(i, n), q[j]), j, 1, n), i, 1, n) $
+apply(matrix, %) $
+evs: eigenvalues(%), radcan;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+n: m $
+w0p: (-g*n*I + sqrt(4*g^2*n^2 - I^2 + 4))/(g^2*n^2 + 1) $
+lam: 1 - n*g*(I + g*n*w)/sqrt(4 - g*n*w) $
+lam, w=w0p $ %, I=0 $
+wximplicit_plot([%=0], [g, -1, 1], [m, 2, 20], [legend, ""]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+evs[1][2];
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+evs[1][2];
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+(-I+(-q[3]-q[2]-q[1])*g+2)*(I+(q[3]+q[2]+q[1])*g+2), factor;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+4-(g*sum(q[i],i,1,3) + I)^2, expand, factor;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: subsect start ]
+Two and two
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: subsect start ]
+Two and three
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: subsect start ]
+Three and three
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: section start ]
+Excitator dynamics
+   [wxMaxima: section end   ] */
+
+/* [wxMaxima: subsect start ]
+Original formulation
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: subsect start ]
+Simulating the Excitator
+   [wxMaxima: subsect end   ] */
+
+/* [wxMaxima: input   start ] */
+rng_state: make_random_state(42)$
+set_random_state(rng_state);
+load(distrib);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sig: 2$
+foo(t):=random_normal(0., sig+t/1000000.0)$
+dx : x - x^3/3 + y + foo(t)$
+dy : 0.3 -x + foo(t)$
+sol: rk([dx, dy], [x, y], [0, 1], [t, 0, 30, 0.05])$
+wxplot2d([discrete, map(lambda([x],[x[1],x[2]]), sol)]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: subsect start ]
+Generalizing the Excitator constraints
+   [wxMaxima: subsect end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$
